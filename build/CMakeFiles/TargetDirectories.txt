@@ -1,0 +1,10 @@
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/intrinsics_gen.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/vt_gen.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/omp_gen.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/acc_gen.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/target_parser_gen.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/clang-tablegen-targets.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/flang-modernization-advisor.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/INSTALL.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/ALL_BUILD.dir
+E:/Flang Advisor for legacy Fortan/build/CMakeFiles/ZERO_CHECK.dir

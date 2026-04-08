@@ -1,0 +1,10 @@
+^E:\FLANG ADVISOR FOR LEGACY FORTAN\BUILD\CMAKEFILES\90696493E0D55A1D259EE2CEC2208D4C\GENERATE.STAMP.RULE
+setlocal
+"E:\EL\Visual Studio\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SE:/Flang Advisor for legacy Fortan" "-BE:/Flang Advisor for legacy Fortan/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "E:/Flang Advisor for legacy Fortan/build/FlangModernizationAdvisor.slnx"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

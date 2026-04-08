@@ -1,0 +1,29 @@
+{
+  "source": "./tests/legacy_patterns.f90",
+  "plan": [
+    {
+      "summary": "COMMON blocks should move to MODULE variables with explicit interfaces. (line 19)",
+      "effort": "high",
+      "safety": "review-needed",
+      "priority": 100
+    },
+    {
+      "summary": "EQUIVALENCE introduces aliasing; migrate to explicit data structures. (line 16)",
+      "effort": "high",
+      "safety": "review-needed",
+      "priority": 100
+    },
+    {
+      "summary": "Arithmetic IF should be rewritten to IF / ELSE IF / ELSE. (line 6)",
+      "effort": "high",
+      "safety": "review-needed",
+      "priority": 85
+    },
+    {
+      "summary": "Computed GOTO should be replaced with structured SELECT CASE. (line 11)",
+      "effort": "high",
+      "safety": "review-needed",
+      "priority": 85
+    }
+  ]
+}
