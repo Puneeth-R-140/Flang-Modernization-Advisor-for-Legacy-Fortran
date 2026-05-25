@@ -35,6 +35,8 @@ std::vector<PlanEntry> Prioritization::generatePlan(const std::vector<ImpactSumm
     item.summary = entry.finding.message + " (" + entry.finding.location + ")";
     item.effort = effortLabel(entry.dependentConstructs, entry.behaviorChangeRisk);
     item.safety = safetyLabel(entry.aliasingRisk, entry.behaviorChangeRisk);
+    item.legacyConstruct = entry.finding.legacyConstruct;
+    item.modernEquivalent = entry.finding.modernEquivalent;
 
     int priority = 40;
     priority += entry.dependentConstructs * 10;

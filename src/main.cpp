@@ -54,7 +54,9 @@ bool writeJsonPlan(const std::string &outputPath,
     out << "      \"summary\": \"" << escapeJson(entry.summary) << "\",\n";
     out << "      \"effort\": \"" << escapeJson(entry.effort) << "\",\n";
     out << "      \"safety\": \"" << escapeJson(entry.safety) << "\",\n";
-    out << "      \"priority\": " << entry.priority << "\n";
+    out << "      \"priority\": " << entry.priority << ",\n";
+    out << "      \"legacy\": \"" << escapeJson(entry.legacyConstruct) << "\",\n";
+    out << "      \"modern\": \"" << escapeJson(entry.modernEquivalent) << "\"\n";
     out << "    }";
     if (i + 1 < plan.size()) {
       out << ",";

@@ -35,3 +35,6 @@ compile_commands.json
 *.dll
 *.lib
 *.exp
+
+# Temporary analyzer runs
+temp_build/
