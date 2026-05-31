@@ -1,13 +1,20 @@
 ! Legacy Fortran test fixture for modernization advisor
       program legacy_patterns
       implicit none
+      use undefined_mod
       integer i
       integer j
       integer k, l
       real x
+      integer mylabel
+      integer idx
+      character*5 name
       
       ! Obsolete Statement function definition (before executable statements)
       f(y) = y * y + 1.0
+      
+      ! Hollerith constant
+      data name / 5Hhello /
       
       ! Arithmetic IF
       if (i) 10, 20, 30
@@ -26,6 +33,21 @@
 
       ! COMMON blocks
       common /block/ k, l
+
+      ! ASSIGN & Assigned GOTO
+      assign 200 to mylabel
+      goto mylabel
+
+      ! PAUSE statement
+      pause "paused execution"
+
+      ! Label DO loop
+      do 50 idx = 1, 5
+        write(*,*) idx
+ 50   continue
+
+      ! Call to an undefined subroutine to trigger call graph validation
+      call undefined_sub(i)
 
       ! Multi-line continuation check
       write(*,*) &

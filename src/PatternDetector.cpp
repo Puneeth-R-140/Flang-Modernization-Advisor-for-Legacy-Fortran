@@ -262,6 +262,126 @@ struct UnitInfo {
   int statementCount = 0;
 };
 
+bool isIdentifierChar(char c) {
+  return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
+}
+
+CommonVariable resolveVariable(const std::string &varName, const SourceAnalysis &analysis) {
+  CommonVariable info;
+  info.name = varName;
+  
+  for (const auto &stmt : analysis.statements) {
+    bool isDecl = startsWith(stmt.content, "integer") ||
+                  startsWith(stmt.content, "real") ||
+                  startsWith(stmt.content, "doubleprecision") ||
+                  startsWith(stmt.content, "logical") ||
+                  startsWith(stmt.content, "character") ||
+                  startsWith(stmt.content, "complex") ||
+                  startsWith(stmt.content, "type") ||
+                  startsWith(stmt.content, "dimension");
+    if (!isDecl) continue;
+    
+    std::size_t pos = stmt.rawContent.find(varName);
+    while (pos != std::string::npos) {
+      bool leadingOk = (pos == 0 || !isIdentifierChar(stmt.rawContent[pos - 1]));
+      bool trailingOk = (pos + varName.size() == stmt.rawContent.size() || !isIdentifierChar(stmt.rawContent[pos + varName.size()]));
+      if (leadingOk && trailingOk) {
+        if (!startsWith(stmt.content, "dimension")) {
+          std::vector<std::string> prefixes = {"integer", "real", "doubleprecision", "logical", "character", "complex", "type"};
+          for (const auto &pref : prefixes) {
+            if (startsWith(stmt.content, pref)) {
+              info.type = pref;
+              break;
+            }
+          }
+        }
+        
+        std::size_t nextCharPos = pos + varName.size();
+        while (nextCharPos < stmt.rawContent.size() && std::isspace(static_cast<unsigned char>(stmt.rawContent[nextCharPos]))) {
+          nextCharPos++;
+        }
+        if (nextCharPos < stmt.rawContent.size() && stmt.rawContent[nextCharPos] == '(') {
+          std::size_t closeParen = stmt.rawContent.find(')', nextCharPos);
+          if (closeParen != std::string::npos && closeParen > nextCharPos) {
+            std::string dims = stmt.rawContent.substr(nextCharPos + 1, closeParen - nextCharPos - 1);
+            int size = 1;
+            std::string currentDim;
+            for (char c : dims) {
+              if (c == ',') {
+                int d = std::atoi(currentDim.c_str());
+                if (d > 0) size *= d;
+                currentDim.clear();
+              } else if (std::isdigit(static_cast<unsigned char>(c))) {
+                currentDim.push_back(c);
+              }
+            }
+            if (!currentDim.empty()) {
+              int d = std::atoi(currentDim.c_str());
+              if (d > 0) size *= d;
+            }
+            info.arraySize = size;
+          }
+        }
+      }
+      pos = stmt.rawContent.find(varName, pos + 1);
+    }
+  }
+  return info;
+}
+
+bool findHollerith(const std::string &raw, std::string &outConstruct) {
+  std::size_t i = 0;
+  while (i < raw.size()) {
+    if (std::isdigit(static_cast<unsigned char>(raw[i]))) {
+      if (i > 0 && (std::isalnum(static_cast<unsigned char>(raw[i - 1])) || raw[i - 1] == '_')) {
+        i++;
+        continue;
+      }
+      std::size_t start = i;
+      while (i < raw.size() && std::isdigit(static_cast<unsigned char>(raw[i]))) {
+        i++;
+      }
+      if (i < raw.size() && (raw[i] == 'H' || raw[i] == 'h')) {
+        int len = std::stoi(raw.substr(start, i - start));
+        if (len > 0 && i + 1 + len <= raw.size()) {
+          outConstruct = raw.substr(start, i - start + 1 + len);
+          return true;
+        }
+      }
+    }
+    i++;
+  }
+  return false;
+}
+
+std::string makeModernHollerith(const std::string &legacy) {
+  std::size_t hPos = legacy.find_first_of("Hh");
+  if (hPos != std::string::npos) {
+    std::string strPart = legacy.substr(hPos + 1);
+    return "\"" + strPart + "\"";
+  }
+  return legacy;
+}
+
+std::string makeModernDoLoop(const std::string &rawContent) {
+  std::string res = rawContent;
+  std::size_t doPos = res.find("do");
+  if (doPos != std::string::npos) {
+    std::size_t i = doPos + 2;
+    while (i < res.size() && std::isspace(static_cast<unsigned char>(res[i]))) {
+      i++;
+    }
+    std::size_t digitStart = i;
+    while (i < res.size() && std::isdigit(static_cast<unsigned char>(res[i]))) {
+      i++;
+    }
+    if (i > digitStart) {
+      res.erase(digitStart, i - digitStart);
+    }
+  }
+  return res + "\n  ! loop body\nend do";
+}
+
 } // namespace
 
 std::vector<PatternFinding> PatternDetector::detectPatterns(const SourceAnalysis &analysis) {
@@ -405,6 +525,61 @@ std::vector<PatternFinding> PatternDetector::detectPatterns(const SourceAnalysis
                             {stmtFuncName}, stmt.rawContent, modern});
       }
     }
+
+    // 1. Hollerith Constants
+    std::string hollerithConst;
+    if (findHollerith(stmt.rawContent, hollerithConst)) {
+      std::string modern = "! Use character literal instead of Hollerith constant\n" + makeModernHollerith(hollerithConst);
+      findings.push_back({"hollerith_constant", location,
+                          "Hollerith constant '" + hollerithConst + "' is an obsolete data representation.",
+                          {}, hollerithConst, modern});
+    }
+
+    // 2. ASSIGN & Assigned GOTO
+    if (startsWith(stmt.content, "assign") && stmt.content.find("to") != std::string::npos) {
+      std::string modern = "! Replace ASSIGN with standard integer assignment\n! E.g. labelvar = 10";
+      findings.push_back({"assign_statement", location,
+                          "ASSIGN statement is obsolete; use integer variable assignment.",
+                          {}, stmt.rawContent, modern});
+    }
+    if (startsWith(stmt.content, "goto") && 
+        stmt.content.find('(') == std::string::npos && 
+        stmt.content.find('=') == std::string::npos) {
+      std::string suffix = stmt.content.substr(4);
+      bool isNumeric = !suffix.empty();
+      for (char c : suffix) {
+        if (!std::isdigit(static_cast<unsigned char>(c))) {
+          isNumeric = false;
+          break;
+        }
+      }
+      if (!isNumeric && !suffix.empty()) {
+        std::string modern = "! Replace assigned GOTO with structured SELECT CASE or IF:\nif (" + suffix + " == 10) then\n  goto 10\nend if";
+        findings.push_back({"assigned_goto", location,
+                            "Assigned GOTO is obsolete; replace with SELECT CASE or IF blocks.",
+                            {}, stmt.rawContent, modern});
+      }
+    }
+
+    // 3. PAUSE Statement
+    if (startsWith(stmt.content, "pause") && stmt.content.find('=') == std::string::npos) {
+      std::string modern = "! PAUSE is obsolete; replace with print and read statements\nwrite(*,*) \"PAUSE: Press Enter to continue...\"\nread(*,*)";
+      findings.push_back({"pause_statement", location,
+                          "PAUSE statement is obsolete; replace with READ statement.",
+                          {}, stmt.rawContent, modern});
+    }
+
+    // 4. Label DO Loops
+    if (startsWith(stmt.content, "do") && 
+        stmt.content.size() > 2 && 
+        std::isdigit(static_cast<unsigned char>(stmt.content[2])) &&
+        stmt.content.find('=') != std::string::npos &&
+        stmt.content.find(',') != std::string::npos) {
+      std::string modern = makeModernDoLoop(stmt.rawContent);
+      findings.push_back({"label_do_loop", location,
+                          "Label-terminated DO loop is obsolete; convert to block DO / END DO.",
+                          {}, stmt.rawContent, modern});
+    }
   }
 
   if (currentUnit.isActive && currentUnit.statementCount > 0) {
@@ -433,6 +608,82 @@ std::vector<PatternFinding> PatternDetector::detectPatterns(const SourceAnalysis
 
   std::cerr << "[PatternDetector] Detected " << findings.size() << " pattern finding(s)\n";
   return findings;
+}
+
+std::vector<CommonBlockLayout> PatternDetector::extractCommonLayouts(const SourceAnalysis &analysis) {
+  std::vector<CommonBlockLayout> layouts;
+  
+  for (const auto &stmt : analysis.statements) {
+    if (startsWith(stmt.content, "common/") || 
+        (startsWith(stmt.content, "common") && stmt.content.find('=') == std::string::npos)) {
+      
+      std::string blockName = "blank_common";
+      std::size_t slash1 = stmt.content.find('/');
+      if (slash1 != std::string::npos) {
+        std::size_t slash2 = stmt.content.find('/', slash1 + 1);
+        if (slash2 != std::string::npos && slash2 > slash1) {
+          blockName = stmt.content.substr(slash1 + 1, slash2 - slash1 - 1);
+        }
+      }
+      
+      CommonBlockLayout layout;
+      layout.blockName = blockName;
+      layout.sourceFile = analysis.filePath;
+      layout.line = stmt.startLine;
+      
+      auto vars = extractVariablesForCommon(stmt.rawContent);
+      for (const auto &var : vars) {
+        layout.variables.push_back(resolveVariable(var, analysis));
+      }
+      
+      layouts.push_back(layout);
+    }
+  }
+  return layouts;
+}
+
+FileDependencies PatternDetector::extractDependencies(const SourceAnalysis &analysis) {
+  FileDependencies deps;
+  deps.filePath = analysis.filePath;
+  
+  auto toLowerString = [](std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
+      return std::tolower(c);
+    });
+    return str;
+  };
+  
+  for (const auto &stmt : analysis.statements) {
+    auto ids = getIdentifiers(stmt.rawContent);
+    if (ids.size() < 2) continue;
+    
+    std::string firstId = toLowerString(ids[0]);
+    
+    if (startsWith(stmt.content, "module") && !startsWith(stmt.content, "moduleprocedure")) {
+      deps.declaredModules.push_back(toLowerString(ids[1]));
+    }
+    
+    if (startsWith(stmt.content, "subroutine")) {
+      deps.declaredSubroutines.push_back(toLowerString(ids[1]));
+    } else {
+      for (size_t idx = 0; idx + 1 < ids.size(); ++idx) {
+        if (toLowerString(ids[idx]) == "function") {
+          deps.declaredSubroutines.push_back(toLowerString(ids[idx + 1]));
+          break;
+        }
+      }
+    }
+    
+    if (startsWith(stmt.content, "use") && stmt.content.find('=') == std::string::npos) {
+      deps.usedModules.push_back(toLowerString(ids[1]));
+    }
+    
+    if (startsWith(stmt.content, "call") && stmt.content.find('=') == std::string::npos) {
+      deps.calledSubroutines.push_back(toLowerString(ids[1]));
+    }
+  }
+  
+  return deps;
 }
 
 } // namespace LegacyFortranAdvisor

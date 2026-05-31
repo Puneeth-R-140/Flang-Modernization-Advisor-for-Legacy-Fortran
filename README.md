@@ -1,52 +1,88 @@
 # Flang Modernization Advisor for Legacy Fortran
 
-A static analysis tool for detecting legacy Fortran anti-patterns and generating prioritized modernization recommendations.
+A comprehensive static analysis framework and interactive web dashboard designed to detect obsolete Fortran constructs, validate cross-file structural layouts (like `COMMON` blocks), verify subroutine/module call graphs, and generate prioritized modernization refactoring plans.
 
-## Goals
-- Detect legacy patterns such as arithmetic IF, computed GOTO, EQUIVALENCE, COMMON, implicit typing, statement functions, fixed-form formatting, assumed-size arrays, and ENTRY statements.
-- Analyze semantic impact and risk for modernization.
-- Produce a prioritized plan with effort estimates and safety ratings.
+## Features
+- **Comprehensive Pattern Detection**: Scans and identifies 13 distinct legacy Fortran anti-patterns:
+  - Arithmetic IF
+  - Computed GOTO
+  - EQUIVALENCE statements
+  - COMMON blocks
+  - Statement Functions
+  - ENTRY statements
+  - Assumed-size arrays
+  - Implicit typing (missing `implicit none`)
+  - Hollerith constants
+  - ASSIGN and Assigned GOTO statements
+  - PAUSE statements
+  - Label-terminated DO loops
+- **Cross-File Layout Verification**: Validates type, sizing, and alignment uniformity of shared `COMMON` blocks across multiple translation units, flagging structural mismatches.
+- **Dependency & Call Graph Validation**: Analyzes module imports (`use`) and external subroutine calls (`call`) across files to flag undefined resources (skipping standard intrinsics like `cpu_time`).
+- **Interactive Web Interface**: A glassmorphic web dashboard that supports:
+  - Drag-and-drop uploads of multiple Fortran source files or directories.
+  - Live syntax-highlighted code viewer.
+  - Interactive clickable alerts that highlight line ranges and auto-switch files.
+  - Side-by-side legacy vs. modernized code refactoring previews.
+
+---
 
 ## Project Structure
-- `CMakeLists.txt` - build configuration
-- `src/` - core application sources
-- `include/LegacyFortranAdvisor/` - public headers
-- `tests/` - legacy Fortran fixtures and planned test cases
-- `docs/` - architecture and design notes
+- `build.sh` - Automated Release build compiler script
+- `run.sh` - Executable wrapper script to run the compiler tool
+- `CMakeLists.txt` - CMake build configuration
+- `app.py` - Python HTTP server serving the Web API and static frontend
+- `src/` - Core static analysis C++ engine
+  - `main.cpp` - Entrypoint scanner, directory crawler, and cross-file validator
+  - `FlangFrontend.cpp` - Preprocessor normalizer (handles spacing, comments, continuation lines)
+  - `PatternDetector.cpp` - Parser/detector rules for all obsolete constructs
+  - `ImpactAnalyzer.cpp` - Semantic impact, modern equivalency, and risk parser
+  - `Prioritization.cpp` - Multi-criteria scoring engine
+- `include/LegacyFortranAdvisor/` - C++ Header files defining API data structures
+- `web/` - Web dashboard assets
+  - `index.html` - Premium glassmorphic interactive frontend UI
+- `tests/` - Obsolete Fortran code fixtures
+  - `legacy_patterns.f90` - Comprehensive obsolete patterns test case
+  - `mismatch_patterns.f90` - Mismatched `COMMON` layout test case
+- `DESIGN.md` - Technical design choices, preprocessor pipeline, and alternative analyses
+- `IMPLEMENTATION.md` - Lexical preprocessor, parser details, and validation routine implementation
+- `EVALUATION.md` - Performance metrics, baseline accuracy, and test suite evaluation
 
-## Build
+---
+
+## Getting Started
+
+### Prerequisites
+- CMake 3.22 or higher
+- C++20 Compiler (MSVC on Windows, GCC/Clang on Unix)
+- Python 3.x (only required for running the web dashboard)
+- LLVM / Clang (the engine links against LLVM components to prepare for deep parse-tree analysis)
+
+### Build
+To compile the C++ analyzer in `Release` configuration, execute the build script:
 ```bash
-mkdir build
-cd build
-cmake ..
-cmake --build .
+./build.sh
+```
+This compiles the executable and outputs it to `build/Release/flang-modernization-advisor` (or `.exe` on Windows).
+
+### Run (CLI)
+You can analyze a single file or an entire directory of Fortran source files by executing `run.sh`:
+```bash
+# Analyze a folder of Fortran files
+./run.sh tests/
+
+# Save analysis to a JSON report for downstream integration
+./run.sh tests/ --output build/plan.json
 ```
 
-## Run
+### Run (Web Dashboard)
+To launch the interactive dashboard, run the local Python server:
 ```bash
-./build/Debug/flang-modernization-advisor ./tests/legacy_patterns.f90
+python app.py
 ```
-
-Optional JSON output:
-```bash
-./build/Debug/flang-modernization-advisor ./tests/legacy_patterns.f90 --output ./build/plan.json
+Then, open your web browser and navigate to:
 ```
-
-## Current Detection Coverage
-- arithmetic IF
-- computed GOTO
-- EQUIVALENCE
-- COMMON blocks
-- optional fixed-form file hint (extension-based)
-
-## Current Output
-- Sorted modernization plan entries
-- Effort labels: low, moderate, high
-- Safety labels: safe, review-needed
-- Optional JSON report for downstream tooling
-
-## Next Steps
-1. Replace heuristic scanning with real Flang parse tree and semantic integration.
-2. Expand detection to statement functions, ENTRY, and implicit typing scenarios.
-3. Add fixture-based regression tests for each supported pattern.
-4. Add cross-file impact analysis for module and call graph dependencies.
+http://localhost:8000
+```
+On the dashboard:
+1. Click **Load Multi-File Mismatch Example** to immediately populate the analyzer with the multi-file test fixture demonstrating cross-file mismatches.
+2. Drag and drop your own Fortran files or folders to view modernization plans.

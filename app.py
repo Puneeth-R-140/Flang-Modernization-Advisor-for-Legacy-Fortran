@@ -3,6 +3,7 @@ import socketserver
 import json
 import subprocess
 import os
+import shutil
 
 PORT = 8000
 DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
@@ -15,39 +16,62 @@ class ModernizationAdvisorHandler(http.server.SimpleHTTPRequestHandler):
             
             try:
                 data = json.loads(post_data.decode('utf-8'))
-                file_content = data.get('content', '')
-                filename = data.get('filename', 'input.f90')
+                
+                files_to_write = []
+                if "files" in data:
+                    files_to_write = data["files"]
+                else:
+                    files_to_write = [{
+                        "content": data.get('content', ''),
+                        "filename": data.get('filename', 'input.f90')
+                    }]
                 
                 temp_dir = os.path.join(os.path.dirname(__file__), "temp_build")
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
                 os.makedirs(temp_dir, exist_ok=True)
                 
-                temp_file_path = os.path.join(temp_dir, filename)
-                with open(temp_file_path, "w", encoding="utf-8") as f:
-                    f.write(file_content)
+                for f_info in files_to_write:
+                    f_path = os.path.join(temp_dir, f_info["filename"])
+                    os.makedirs(os.path.dirname(f_path), exist_ok=True)
+                    with open(f_path, "w", encoding="utf-8") as f:
+                        f.write(f_info["content"])
                 
                 advisor_exe = os.path.join(os.path.dirname(__file__), "build", "Debug", "flang-modernization-advisor.exe")
+                # Fallback to Release path or standard Linux binary if debug exe doesn't exist
+                if not os.path.exists(advisor_exe):
+                    advisor_exe_release = os.path.join(os.path.dirname(__file__), "build", "Release", "flang-modernization-advisor.exe")
+                    if os.path.exists(advisor_exe_release):
+                        advisor_exe = advisor_exe_release
+                    else:
+                        advisor_exe = os.path.join(os.path.dirname(__file__), "build", "flang-modernization-advisor")
+                
                 plan_json_path = os.path.join(temp_dir, "plan.json")
                 
-                cmd = [advisor_exe, temp_file_path, "--output", plan_json_path]
+                input_arg = temp_dir if len(files_to_write) > 1 else os.path.join(temp_dir, files_to_write[0]["filename"])
+                
+                cmd = [advisor_exe, input_arg, "--output", plan_json_path]
                 result = subprocess.run(cmd, capture_output=True, text=True, check=False)
                 
                 response_data = {}
                 if result.returncode == 0 and os.path.exists(plan_json_path):
                     with open(plan_json_path, "r", encoding="utf-8") as f:
                         response_data = json.load(f)
-                    response_data["sourceLines"] = file_content.splitlines()
+                    
+                    if len(files_to_write) > 1:
+                        response_data["files"] = files_to_write
+                    else:
+                        response_data["sourceLines"] = files_to_write[0]["content"].splitlines()
                 else:
                     response_data = {
                         "error": "Failed to run advisor binary",
-                        "details": result.stderr,
+                        "details": result.stderr if result.stderr else result.stdout,
                         "code": result.returncode
                     }
                 
                 try:
-                    if os.path.exists(temp_file_path):
-                        os.remove(temp_file_path)
-                    if os.path.exists(plan_json_path):
-                        os.remove(plan_json_path)
+                    if os.path.exists(temp_dir):
+                        shutil.rmtree(temp_dir)
                 except Exception:
                     pass
                 
@@ -75,11 +99,7 @@ class ModernizationAdvisorHandler(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     os.makedirs(DIRECTORY, exist_ok=True)
-    
-    # Simple lambda adapter to pass the directory configuration in a backward-compatible way
     handler = lambda *args, **kwargs: ModernizationAdvisorHandler(*args, directory=DIRECTORY, **kwargs)
-    
-    # Allow address reuse
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", PORT), handler) as httpd:
         print(f"Serving Flang Modernization Advisor UI at http://localhost:{PORT}")

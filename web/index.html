@@ -9,17 +9,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-main: #0b0f19;
-      --bg-card: rgba(17, 24, 39, 0.7);
-      --border-card: rgba(255, 255, 255, 0.08);
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --accent-green: #10b981;
-      --accent-orange: #f59e0b;
-      --accent-red: #ef4444;
-      --glow: rgba(99, 102, 241, 0.15);
+      --bg-main: #0c0e12;
+      --bg-card: rgba(22, 28, 36, 0.65);
+      --border-card: rgba(255, 255, 255, 0.05);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --accent-green: #34d399;
+      --accent-orange: #d97706;
+      --accent-red: #f43f5e;
+      --glow: rgba(16, 185, 129, 0.12);
     }
 
     * {
@@ -35,8 +35,8 @@
       min-height: 100vh;
       overflow-x: hidden;
       background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(217, 119, 6, 0.06) 0px, transparent 50%);
     }
 
     header {
@@ -49,7 +49,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(11, 15, 25, 0.5);
+      background: rgba(12, 14, 18, 0.5);
     }
 
     .logo-container {
@@ -75,7 +75,7 @@
       font-size: 1.5rem;
       font-weight: 700;
       letter-spacing: -0.025em;
-      background: linear-gradient(to right, #ffffff, #c7d2fe);
+      background: linear-gradient(to right, #ffffff, #a7f3d0);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -114,19 +114,19 @@
     }
 
     .dropzone {
-      border: 2px dashed rgba(99, 102, 241, 0.3);
+      border: 2px dashed rgba(16, 185, 129, 0.3);
       border-radius: 1rem;
       padding: 2rem;
       text-align: center;
       cursor: pointer;
       transition: all 0.3s ease;
-      background: rgba(99, 102, 241, 0.02);
+      background: rgba(16, 185, 129, 0.02);
     }
 
     .dropzone:hover, .dropzone.dragover {
       border-color: var(--primary);
-      background: rgba(99, 102, 241, 0.06);
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+      background: rgba(16, 185, 129, 0.06);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
     }
 
     .dropzone svg {
@@ -228,14 +228,14 @@
     }
 
     .finding-card:hover {
-      border-color: rgba(99, 102, 241, 0.4);
-      background: rgba(99, 102, 241, 0.03);
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.03);
     }
 
     .finding-card.active {
       border-color: var(--primary);
-      background: rgba(99, 102, 241, 0.06);
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.1);
+      background: rgba(16, 185, 129, 0.06);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
     }
 
     .finding-card::before {
@@ -298,7 +298,6 @@
     .panel-header-title {
       font-size: 1.1rem;
       font-weight: 600;
-      margin-bottom: 0.75rem;
       color: var(--text-main);
       display: flex;
       align-items: center;
@@ -346,7 +345,7 @@
     }
 
     .code-line.highlight {
-      background-color: rgba(99, 102, 241, 0.18);
+      background-color: rgba(16, 185, 129, 0.18);
       box-shadow: inset 3px 0 0 var(--primary);
     }
 
@@ -485,7 +484,10 @@
         <div class="subtitle">Legacy Fortran Static Analysis Engine</div>
       </div>
     </div>
-    <button class="btn-example" id="btn-load-example">Load Example Code</button>
+    <div style="display: flex; gap: 0.75rem;">
+      <button class="btn-example" id="btn-load-single">Load Single File Example</button>
+      <button class="btn-example" id="btn-load-multi" style="border-color: var(--primary);">Load Multi-File Mismatch Example</button>
+    </div>
   </header>
 
   <div class="container">
@@ -504,9 +506,9 @@
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
           </svg>
-          <p>Drag and drop legacy Fortran file (.f90, .f, .f77)</p>
-          <input type="file" id="file-input" class="hidden" accept=".f90,.f,.f77,.for">
-          <button class="btn-example" onclick="document.getElementById('file-input').click()">Select File</button>
+          <p>Drag & drop Fortran file(s) or folders</p>
+          <input type="file" id="file-input" class="hidden" accept=".f90,.f,.f77,.for" multiple>
+          <button class="btn-example" onclick="document.getElementById('file-input').click()">Select File(s)</button>
         </div>
       </div>
 
@@ -548,11 +550,15 @@
       
       <!-- Original Source Code Viewer -->
       <div class="code-viewer-container">
-        <div class="panel-header-title">
-          <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-          </svg>
-          Source Code Viewer
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <div class="panel-header-title" style="margin-bottom: 0;">
+            <svg style="width: 1.2rem; height: 1.2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+            </svg>
+            Source Code Viewer
+          </div>
+          <select id="file-selector" class="btn-example" style="padding: 0.3rem 0.75rem; border-radius: 0.5rem; background: #161c24; border-color: rgba(255,255,255,0.1); display: none;">
+          </select>
         </div>
         <div class="code-viewer" id="code-viewer">
           <div class="placeholder-text" style="border: none;">Upload a file to display the raw Fortran lines.</div>
@@ -580,7 +586,8 @@
     // Elements
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file-input');
-    const loadExampleBtn = document.getElementById('btn-load-example');
+    const loadSingleBtn = document.getElementById('btn-load-single');
+    const loadMultiBtn = document.getElementById('btn-load-multi');
     const loading = document.getElementById('loading');
     
     // Stats
@@ -593,6 +600,10 @@
     const findingsContainer = document.getElementById('findings-container');
     const codeViewer = document.getElementById('code-viewer');
     const diffGrid = document.getElementById('diff-grid');
+    const fileSelector = document.getElementById('file-selector');
+
+    // Global state
+    let uploadedFiles = {}; // filename -> array of lines
 
     // Drag-and-drop actions
     dropzone.addEventListener('dragover', (e) => {
@@ -608,27 +619,55 @@
       e.preventDefault();
       dropzone.classList.remove('dragover');
       if (e.dataTransfer.files.length > 0) {
-        analyzeFile(e.dataTransfer.files[0]);
+        processUploadedFiles(e.dataTransfer.files);
       }
     });
 
     fileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
-        analyzeFile(e.target.files[0]);
+        processUploadedFiles(e.target.files);
       }
     });
+
+    function processUploadedFiles(filesList) {
+      const promises = [];
+      for (let i = 0; i < filesList.length; i++) {
+        const file = filesList[i];
+        promises.push(new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            resolve({
+              filename: file.name,
+              content: e.target.result
+            });
+          };
+          reader.readAsText(file);
+        }));
+      }
+
+      Promise.all(promises).then(filesArray => {
+        analyzeMultiFiles(filesArray);
+      });
+    }
 
     // Default legacy example file content to run
     const legacyPatternsExample = `! Legacy Fortran test fixture for modernization advisor
       program legacy_patterns
       implicit none
+      use undefined_mod
       integer i
       integer j
       integer k, l
       real x
+      integer mylabel
+      integer idx
+      character*5 name
       
       ! Obsolete Statement function definition (before executable statements)
       f(y) = y * y + 1.0
+      
+      ! Hollerith constant
+      data name / 5Hhello /
       
       ! Arithmetic IF
       if (i) 10, 20, 30
@@ -647,6 +686,21 @@
 
       ! COMMON blocks
       common /block/ k, l
+
+      ! ASSIGN & Assigned GOTO
+      assign 200 to mylabel
+      goto mylabel
+
+      ! PAUSE statement
+      pause "paused execution"
+
+      ! Label DO loop
+      do 50 idx = 1, 5
+        write(*,*) idx
+ 50   continue
+
+      ! Call to an undefined subroutine to trigger call graph validation
+      call undefined_sub(i)
 
       ! Multi-line continuation check
       write(*,*) &
@@ -672,29 +726,41 @@
       
       end`;
 
-    loadExampleBtn.addEventListener('click', () => {
-      analyzeRawContent(legacyPatternsExample, "legacy_patterns.f90");
+    const mismatchPatternsExample = `! Secondary legacy file to verify cross-file COMMON layout validation
+      subroutine sub2()
+      common /block/ k, l
+      real k(10)
+      real l
+      end`;
+
+    loadSingleBtn.addEventListener('click', () => {
+      analyzeMultiFiles([{
+        filename: "legacy_patterns.f90",
+        content: legacyPatternsExample
+      }]);
     });
 
-    function analyzeFile(file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        analyzeRawContent(e.target.result, file.name);
-      };
-      reader.readAsText(file);
-    }
+    loadMultiBtn.addEventListener('click', () => {
+      analyzeMultiFiles([
+        { filename: "legacy_patterns.f90", content: legacyPatternsExample },
+        { filename: "mismatch_patterns.f90", content: mismatchPatternsExample }
+      ]);
+    });
 
-    function analyzeRawContent(content, filename) {
+    function analyzeMultiFiles(filesArray) {
       loading.classList.remove('hidden');
       
-      fetch('/api/analyze', {
+      const endpoint = window.location.protocol === 'file:' 
+        ? 'http://localhost:8000/api/analyze' 
+        : '/api/analyze';
+
+      fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          content: content,
-          filename: filename
+          files: filesArray
         })
       })
       .then(res => {
@@ -712,40 +778,8 @@
       });
     }
 
-    function renderAdvisorReport(data) {
-      if (data.error) {
-        alert("Error running advisor: " + data.details);
-        return;
-      }
-
-      // 1. Render Stats
-      const plan = data.plan || [];
-      const totalAlerts = plan.length;
-      const highPriorityCount = plan.filter(p => p.effort === 'high' || p.priority >= 80).length;
-      
-      statTotal.innerText = totalAlerts;
-      statHigh.innerText = highPriorityCount;
-      
-      // Calculate health score: start at 100%, deduct based on priority
-      let health = 100;
-      plan.forEach(item => {
-        health -= (item.priority / 15);
-      });
-      health = Math.max(0, Math.min(100, Math.round(health)));
-      statHealth.innerText = health + "%";
-      
-      if (health < 40) {
-        statHealth.className = "stat-val red";
-      } else if (health < 75) {
-        statHealth.className = "stat-val orange";
-      } else {
-        statHealth.className = "stat-val green";
-      }
-
-      findingsCount.innerText = totalAlerts + (totalAlerts === 1 ? " Alert" : " Alerts");
-
-      // 2. Render Source Code
-      const lines = data.sourceLines || [];
+    function selectAndRenderFile(filename) {
+      const lines = uploadedFiles[filename] || [];
       codeViewer.innerHTML = '';
       
       lines.forEach((line, idx) => {
@@ -766,8 +800,68 @@
         lineDiv.appendChild(contentSpan);
         codeViewer.appendChild(lineDiv);
       });
+    }
 
-      // 3. Render Findings Checklist
+    function renderAdvisorReport(data) {
+      if (data.error) {
+        alert("Error running advisor: " + data.details);
+        return;
+      }
+
+      // Initialize files map
+      uploadedFiles = {};
+      fileSelector.innerHTML = '';
+      fileSelector.style.display = 'none';
+
+      if (data.files) {
+        data.files.forEach(f => {
+          uploadedFiles[f.filename] = f.content.splitlines();
+          
+          const opt = document.createElement('option');
+          opt.value = f.filename;
+          opt.innerText = f.filename;
+          fileSelector.appendChild(opt);
+        });
+        fileSelector.style.display = 'block';
+        
+        fileSelector.onchange = (e) => {
+          selectAndRenderFile(e.target.value);
+        };
+        // Render first file
+        selectAndRenderFile(data.files[0].filename);
+      } else {
+        // Single file format
+        uploadedFiles["input.f90"] = data.sourceLines || [];
+        selectAndRenderFile("input.f90");
+      }
+
+      // Stats
+      const plan = data.plan || [];
+      const totalAlerts = plan.length;
+      const highPriorityCount = plan.filter(p => p.effort === 'high' || p.priority >= 80).length;
+      
+      statTotal.innerText = totalAlerts;
+      statHigh.innerText = highPriorityCount;
+      
+      // Health Score Calculation
+      let health = 100;
+      plan.forEach(item => {
+        health -= (item.priority / 15);
+      });
+      health = Math.max(0, Math.min(100, Math.round(health)));
+      statHealth.innerText = health + "%";
+      
+      if (health < 40) {
+        statHealth.className = "stat-val red";
+      } else if (health < 75) {
+        statHealth.className = "stat-val orange";
+      } else {
+        statHealth.className = "stat-val green";
+      }
+
+      findingsCount.innerText = totalAlerts + (totalAlerts === 1 ? " Alert" : " Alerts");
+
+      // Render Findings
       findingsContainer.innerHTML = '';
       diffGrid.innerHTML = '<div class="placeholder-text">Select a checklist entry to preview modernized code refactoring.</div>';
       
@@ -782,7 +876,14 @@
         card.className = `finding-card ${priorityClass}`;
         card.id = `finding-card-${idx}`;
         
-        // Extract line numbers from the summary, e.g. "COMMON blocks... (line 19)"
+        // Parse filename and line number
+        // e.g. [legacy_patterns.f90] COMMON blocks... (line 19)
+        const filePrefixMatch = item.summary.match(/^\[([^\]]+)\]/);
+        let targetFile = "input.f90";
+        if (filePrefixMatch) {
+          targetFile = filePrefixMatch[1];
+        }
+
         const lineMatch = item.summary.match(/\(line (\d+)(?:-(\d+))?\)/);
         let startLine = null;
         let endLine = null;
@@ -795,7 +896,6 @@
           }
         }
 
-        // Card Content
         card.innerHTML = `
           <div class="finding-title">${item.summary}</div>
           <div class="finding-meta">
@@ -806,11 +906,16 @@
         `;
 
         card.addEventListener('click', () => {
-          // Highlight Active Card
           document.querySelectorAll('.finding-card').forEach(c => c.classList.remove('active'));
           card.classList.add('active');
 
-          // Highlight Lines in Code Viewer
+          // Switch file if needed
+          if (uploadedFiles[targetFile] && fileSelector.value !== targetFile) {
+            fileSelector.value = targetFile;
+            selectAndRenderFile(targetFile);
+          }
+
+          // Highlight Lines
           document.querySelectorAll('.code-line').forEach(l => l.classList.remove('highlight'));
           if (startLine) {
             for (let l = startLine; l <= endLine; l++) {
@@ -819,14 +924,13 @@
                 lineEl.classList.add('highlight');
               }
             }
-            // Scroll to the line
             const scrollTarget = document.getElementById(`line-row-${startLine}`);
             if (scrollTarget) {
               scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
           }
 
-          // Show Refactoring Diff
+          // Refactoring diff
           diffGrid.innerHTML = `
             <div class="diff-box diff-legacy">${escapeHtml(item.legacy)}</div>
             <div class="diff-box diff-modern">${escapeHtml(item.modern)}</div>
@@ -835,6 +939,13 @@
 
         findingsContainer.appendChild(card);
       });
+    }
+
+    // Polyfill for old browsers without String.prototype.splitlines
+    if (!String.prototype.splitlines) {
+      String.prototype.splitlines = function() {
+        return this.split(/\r?\n/);
+      };
     }
 
     function escapeHtml(str) {

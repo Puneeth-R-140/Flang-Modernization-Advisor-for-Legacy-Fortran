@@ -45,4 +45,25 @@ struct PlanEntry {
   std::string modernEquivalent;
 };
 
+struct CommonVariable {
+  std::string name;
+  std::string type = "unknown";
+  int arraySize = 1;
+};
+
+struct CommonBlockLayout {
+  std::string blockName;
+  std::string sourceFile;
+  int line = 0;
+  std::vector<CommonVariable> variables;
+};
+
+struct FileDependencies {
+  std::string filePath;
+  std::vector<std::string> declaredModules;
+  std::vector<std::string> declaredSubroutines;
+  std::vector<std::string> usedModules;
+  std::vector<std::string> calledSubroutines;
+};
+
 } // namespace LegacyFortranAdvisor
