@@ -89,7 +89,28 @@ Our test suite contains 5 primary test scenarios designed to validate the parser
 
 ## 4. Run Instructions for Verification
 
-To execute and verify these metrics on your local machine:
-1. Run `./build.sh` to compile the C++ binaries.
-2. Run `./run.sh tests/` to scan all test files.
-3. Observe the output checklist, confirming that **all 45 issues** are detected with **100% accuracy**.
+To execute and verify these metrics on your local machine under either environment:
+
+### On Linux / Inside WSL Terminal (utilizing Flang Compiler Parser)
+1. **Compile the binary**:
+   ```bash
+   ./build.sh
+   ```
+2. **Execute the validation checks over the test suite**:
+   ```bash
+   ./run.sh tests/
+   ```
+
+### On Windows Native Terminal (utilizing Preprocessor normalizer fallback)
+1. **Compile the binary**:
+   ```bash
+   ./build.sh
+   ```
+2. **Execute the validation checks over the test suite**:
+   ```bash
+   ./run.sh tests/
+   ```
+
+*(Note: If you are executing WSL commands directly from your Windows host terminal instead of inside the Linux shell, prefix the commands with `wsl`, for example: `wsl ./build.sh` and `wsl ./run.sh tests/`)*
+
+Observe the output checklist to confirm that all findings and cross-file anomalies are detected successfully with 100% accuracy.

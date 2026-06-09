@@ -74,20 +74,35 @@ This automatically detects your environment:
 - **On Windows**: Compiles into `build/Release/flang-modernization-advisor.exe` using standard lexical analysis rules.
 
 ### Run (CLI)
-You can analyze a single file or an entire directory of Fortran source files by executing `run.sh`:
-```bash
-# Analyze a folder of Fortran files
-./run.sh tests/
+You can analyze a single file or an entire directory of Fortran source files using the `run.sh` script:
+- **From Windows Host Terminal (PowerShell/CMD)**:
+  ```bash
+  # Run the native Windows binary
+  ./run.sh tests/
 
-# Save analysis to a JSON report for downstream integration
-./run.sh tests/ --output build/plan.json
-```
+  # Or run the WSL binary from the Windows host
+  wsl ./run.sh tests/
+  ```
+- **From Linux / Inside WSL Terminal**:
+  ```bash
+  # Run the compiled Linux binary directly
+  ./run.sh tests/
+
+  # Save analysis to a JSON report
+  ./run.sh tests/ --output build_wsl/plan.json
+  ```
 
 ### Run (Web Dashboard)
 To launch the interactive dashboard, run the local Python server:
-```bash
-python app.py
-```
+- **From Windows Host Terminal**:
+  ```bash
+  python app.py
+  ```
+- **From Linux / Inside WSL Terminal**:
+  ```bash
+  python3 app.py
+  ```
+
 Then, open your web browser and navigate to:
 ```
 http://localhost:8000
