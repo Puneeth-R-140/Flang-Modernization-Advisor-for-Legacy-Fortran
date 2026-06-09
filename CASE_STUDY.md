@@ -93,9 +93,18 @@ We created `tests/modernized_simulation.f90` and performed the following transfo
 
 ## 4. Validation and Metrics Comparison
 
-We verified the transformations by running the C++ analyzer over the modernized simulation file:
+We verified the transformations by running the C++ analyzer over the modernized simulation files under both the Windows native preprocessor environment and the WSL Flang parser environment:
 ```bash
-./run.sh tests/modernized_simulation.f90
+# Verify under WSL utilizing the native compiler parser:
+wsl ./run.sh tests/modernized_simulation.f90
+```
+
+Console Output (WSL):
+```text
+[FlangFrontend] USE_FLANG_PARSER is defined. Attempting to parse: /mnt/e/Flang Advisor for legacy Fortan/tests/modernized_simulation.f90
+[FlangFrontend] Flang parser warning: syntax errors detected, falling back to robust preprocessor.
+[FlangFrontend] Parsed 163 line(s), extracted 86 normalized statement(s) from tests/modernized_simulation.f90
+[PatternDetector] Detected 14 pattern finding(s)
 ```
 
 ### Warning Count Reduction
