@@ -15,6 +15,7 @@ message(STATUS "LLVM include dirs: ${LLVM_INCLUDE_DIRS}")
 
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+link_directories(${LLVM_LIBRARY_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 set(SRC_FILES
@@ -28,6 +29,21 @@ set(SRC_FILES
 add_executable(flang-modernization-advisor ${SRC_FILES})
 
 target_include_directories(flang-modernization-advisor PRIVATE include)
+
+# Link official Flang library targets if found
+if(Flang_FOUND OR TARGET flangFrontend)
+  message(STATUS "Found Flang libraries. Enabling compiler AST parser pathway.")
+  add_definitions(-DUSE_FLANG_PARSER)
+  target_link_libraries(flang-modernization-advisor PRIVATE
+    flangFrontend
+    FortranParser
+    FortranSemantics
+    FortranEvaluate
+    FortranDecimal
+    FortranSupport
+    FortranUtils
+  )
+endif()
 
 if(TARGET Flang::FlangFrontend)
   target_link_libraries(flang-modernization-advisor PRIVATE Flang::FlangFrontend)

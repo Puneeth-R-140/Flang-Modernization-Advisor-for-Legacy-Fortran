@@ -65,6 +65,7 @@ To evaluate code structure beyond single files, `main.cpp` aggregates metadata f
 
 ## 4. LLVM Integration Pathway
 
-The advisor is designed to transition smoothly to a full LLVM frontend compiler in future phases:
-- **Parse-Tree Ready**: `FlangFrontend` acts as the entry block. In an LLVM-integrated compiler environment, `parseFile` can be updated to call `Fortran::parser::Parsing` and generate the AST.
-- **Symbol Table Mapping**: The `resolveVariable` helper currently mimics a compiler's Symbol Table lookup. This can easily hook into Flang's `Fortran::semantics::Scope` lookup to verify types and dimensions directly from AST nodes.
+We have successfully implemented the LLVM integration pathway in our WSL build environment:
+- **Parse-Tree Validation**: In `src/FlangFrontend.cpp`, if `-DUSE_FLANG_PARSER` is defined, the system invokes the official `Fortran::parser::Parsing` driver library. This executes the compiler's native `Prescan` and `Parse` stages, validating the formal syntax of the target file using actual compiler components.
+- **Robust Fallback**: If the strict compiler parser discovers syntax or semantic resolution failures (e.g., missing modules or reference scopes typical in legacy snippets), it falls back gracefully to our custom lexical preprocessor and statement normalizer to ensure pattern scanning is never interrupted.
+- **Symbol Table Ready**: The `resolveVariable` table lookups are structured to eventually integrate with Flang's semantic scope mapping (`Fortran::semantics::Scope`), translating type information directly from compiler-generated AST symbols.

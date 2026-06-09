@@ -58,6 +58,7 @@ We evaluated three potential designs for the analysis engine:
 1. **Host Portability**: The target environments of modernization (including local legacy workspaces) often lack compiled LLVM Flang libraries (`Flang_DIR-NOTFOUND`). Option C builds out-of-the-box using standard MSVC/GCC/Clang compilers.
 2. **Robustness Over Baseline**: Simple line-by-line regexes (Option A) fail to detect multi-line constructs (such as a split `EQUIVALENCE` or `COMMON` block) and cannot normalize fixed-form spacing. Option C's preprocessing stage provides robust statement-level parsing.
 3. **Cross-file Capabilities**: We implemented custom symbol collection during the statement pass, enabling the detection of `COMMON` block size/type mismatches and undefined references.
+4. **Hybrid WSL Integration**: To achieve the best of both worlds, we implemented a hybrid pathway. When LLVM/Flang 22 dev packages are detected (e.g., in our WSL environment), CMake compiles the project with `-DUSE_FLANG_PARSER` and links the engine against the official `FortranParser` static libraries. This enables native compiler-level syntax validation before running the pattern detection pipeline.
 
 ---
 

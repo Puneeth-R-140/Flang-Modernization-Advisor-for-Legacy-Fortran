@@ -5,6 +5,12 @@
 #include <iostream>
 #include <cctype>
 
+#ifdef USE_FLANG_PARSER
+#include "flang/Parser/parsing.h"
+#include "flang/Parser/provenance.h"
+#include "llvm/Support/raw_ostream.h"
+#endif
+
 namespace LegacyFortranAdvisor {
 
 namespace {
@@ -192,6 +198,40 @@ std::unique_ptr<SourceAnalysis> FlangFrontend::parseFile(const std::string &path
   } else {
     parseFreeForm(*analysis);
   }
+
+#ifdef USE_FLANG_PARSER
+  std::cerr << "[FlangFrontend] USE_FLANG_PARSER is defined. Attempting to parse: " << path << "\n";
+  try {
+    Fortran::parser::Options options;
+    Fortran::parser::AllSources allSources;
+    Fortran::parser::AllCookedSources allCookedSources{allSources};
+    Fortran::parser::Parsing parsing{allCookedSources};
+    
+    options.isFixedForm = analysis->fixedFormHint;
+    
+    std::string absolutePath = std::filesystem::absolute(path).string();
+    const auto *sourceFile = allSources.Open(absolutePath, llvm::errs());
+    if (!sourceFile) {
+      std::cerr << "[FlangFrontend] Flang parser could not open file: " << absolutePath << "\n";
+    }
+    if (sourceFile) {
+      parsing.Prescan(absolutePath, options);
+      parsing.Parse(llvm::errs());
+      bool parseSuccess = !parsing.messages().AnyFatalError();
+      if (parseSuccess) {
+        std::cerr << "[FlangFrontend] Successfully verified syntax using Flang parser.\n";
+      } else {
+        std::cerr << "[FlangFrontend] Flang parser warning: syntax errors detected, falling back to robust preprocessor.\n";
+      }
+    }
+  } catch (const std::exception &e) {
+    std::cerr << "[FlangFrontend] Flang parser exception: " << e.what() << ", falling back to robust preprocessor.\n";
+  } catch (...) {
+    std::cerr << "[FlangFrontend] Unknown Flang parser exception, falling back to robust preprocessor.\n";
+  }
+#else
+  std::cerr << "[FlangFrontend] USE_FLANG_PARSER is NOT defined.\n";
+#endif
 
   std::cerr << "[FlangFrontend] Parsed " << analysis->lines.size() 
             << " line(s), extracted " << analysis->statements.size() 

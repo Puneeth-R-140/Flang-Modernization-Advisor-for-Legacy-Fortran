@@ -58,14 +58,20 @@ A comprehensive static analysis framework and interactive web dashboard designed
 - CMake 3.22 or higher
 - C++20 Compiler (MSVC on Windows, GCC/Clang on Unix)
 - Python 3.x (only required for running the web dashboard)
-- LLVM / Clang (the engine links against LLVM components to prepare for deep parse-tree analysis)
+- **For Windows**: LLVM/Clang binaries installed (e.g. clang+llvm-22.1.1-x86_64-pc-windows-msvc)
+- **For WSL / Linux**: Install LLVM, Flang, and MLIR development libraries:
+  ```bash
+  sudo apt-get install llvm-22-dev libflang-22-dev libmlir-22-dev mlir-22-tools
+  ```
 
 ### Build
 To compile the C++ analyzer in `Release` configuration, execute the build script:
 ```bash
 ./build.sh
 ```
-This compiles the executable and outputs it to `build/Release/flang-modernization-advisor` (or `.exe` on Windows).
+This automatically detects your environment:
+- **On WSL / Linux**: Compiles into `build_wsl/flang-modernization-advisor` with the native Flang compiler parser target (`-DUSE_FLANG_PARSER`).
+- **On Windows**: Compiles into `build/Release/flang-modernization-advisor.exe` using standard lexical analysis rules.
 
 ### Run (CLI)
 You can analyze a single file or an entire directory of Fortran source files by executing `run.sh`:

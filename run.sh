@@ -8,6 +8,7 @@ BIN_PATHS=(
   "build/Release/flang-modernization-advisor.exe"
   "build/Debug/flang-modernization-advisor.exe"
   "build/flang-modernization-advisor.exe"
+  "build_wsl/flang-modernization-advisor"
   "build/Release/flang-modernization-advisor"
   "build/Debug/flang-modernization-advisor"
   "build/flang-modernization-advisor"

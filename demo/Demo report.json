@@ -1,5 +1,5 @@
 {
-  "source": "tests\\",
+  "source": "tests/enterprise_simulation.f90",
   "plan": [
     {
       "summary": "[enterprise_simulation.f90] COMMON blocks should move to MODULE variables with explicit interfaces. (line 114)",
@@ -42,38 +42,6 @@
       "modern": "! Replace equivalence with target/pointer or structure overlay\ntype_name, target :: temp_work\ntype_name, pointer :: coord_y\ncoord_y => temp_work\n"
     },
     {
-      "summary": "[legacy_patterns.f90] EQUIVALENCE introduces aliasing; migrate to explicit data structures. (line 32)",
-      "effort": "high",
-      "safety": "review-needed",
-      "priority": 100,
-      "legacy": "      equivalence   (  i  ,   j  )",
-      "modern": "! Replace equivalence with target/pointer or structure overlay\ntype_name, target :: i\ntype_name, pointer :: j\nj => i\n"
-    },
-    {
-      "summary": "[legacy_patterns.f90] COMMON blocks should move to MODULE variables with explicit interfaces. (line 35)",
-      "effort": "moderate",
-      "safety": "review-needed",
-      "priority": 95,
-      "legacy": "      common /block/ k, l",
-      "modern": "module global_variables_mod\n  implicit none\n  ! Declare common variables here\n  type_name :: k\n  type_name :: l\nend module global_variables_mod\n\n! In procedures:\nuse global_variables_mod, only : k, l"
-    },
-    {
-      "summary": "[mismatch_patterns.f90] COMMON blocks should move to MODULE variables with explicit interfaces. (line 3)",
-      "effort": "moderate",
-      "safety": "review-needed",
-      "priority": 95,
-      "legacy": "      common /block/ k, l",
-      "modern": "module global_variables_mod\n  implicit none\n  ! Declare common variables here\n  type_name :: k\n  type_name :: l\nend module global_variables_mod\n\n! In procedures:\nuse global_variables_mod, only : k, l"
-    },
-    {
-      "summary": "[GLOBAL] Structural mismatch in COMMON block /block/ between legacy_patterns.f90 (line 35) and mismatch_patterns.f90 (line 3). Reason: Variable type mismatch at index 0 ('k' type 'integer' vs 'k' type 'real')",
-      "effort": "moderate",
-      "safety": "review-needed",
-      "priority": 90,
-      "legacy": "COMMON /block/ in legacy_patterns.f90:\n  k (integer size 1), l (integer size 1)\n\nCOMMON /block/ in mismatch_patterns.f90:\n  k (real size 10), l (real size 1)",
-      "modern": "module block_common_mod\n  implicit none\n  ! Declare synchronized layout here:\n  integer :: k\n  integer :: l\nend module block_common_mod"
-    },
-    {
       "summary": "[enterprise_simulation.f90] Arithmetic IF should be rewritten to IF / ELSE IF / ELSE. (line 84)",
       "effort": "high",
       "safety": "review-needed",
@@ -95,30 +63,6 @@
       "safety": "review-needed",
       "priority": 85,
       "legacy": "      entry solve_mesh_diagnostic(u, v, work, delta)",
-      "modern": "! Split procedure with ENTRY into separate procedures\n! and call shared internal logic or define generic interfaces."
-    },
-    {
-      "summary": "[legacy_patterns.f90] Arithmetic IF should be rewritten to IF / ELSE IF / ELSE. (line 20)",
-      "effort": "high",
-      "safety": "review-needed",
-      "priority": 85,
-      "legacy": "      if (i) 10, 20, 30",
-      "modern": "if (i .lt. 0) then\n  goto 10\nelse if (i .eq. 0) then\n  goto 20\nelse\n  goto 30\nend if"
-    },
-    {
-      "summary": "[legacy_patterns.f90] Computed GOTO should be replaced with structured SELECT CASE. (line 26)",
-      "effort": "high",
-      "safety": "review-needed",
-      "priority": 85,
-      "legacy": "      goto (100, 200, 300) i",
-      "modern": "select case (i)\ncase (1)\n  goto 100\ncase (2)\n  goto 200\ncase (3)\n  goto 300\ncase default\n  ! optional fallback\nend select"
-    },
-    {
-      "summary": "[legacy_patterns.f90] ENTRY statements should be split into separate procedures. (line 71)",
-      "effort": "high",
-      "safety": "review-needed",
-      "priority": 85,
-      "legacy": "      entry alt_sub(arr)",
       "modern": "! Split procedure with ENTRY into separate procedures\n! and call shared internal logic or define generic interfaces."
     },
     {
@@ -146,28 +90,12 @@
       "modern": "! Use assumed-shape interface instead of assumed-size (*)\ntype_name, intent(in) :: arr(:)"
     },
     {
-      "summary": "[legacy_patterns.f90] Assumed-size arrays should migrate to explicit-shape or assumed-rank interfaces. (line 66)",
-      "effort": "moderate",
-      "safety": "review-needed",
-      "priority": 75,
-      "legacy": "      real arr(*)",
-      "modern": "! Use assumed-shape interface instead of assumed-size (*)\ntype_name, intent(in) :: arr(:)"
-    },
-    {
       "summary": "[GLOBAL] Module 'solver_config_mod' used in enterprise_simulation.f90 is not defined in any of the analyzed files.",
       "effort": "moderate",
       "safety": "review-needed",
       "priority": 70,
       "legacy": "use solver_config_mod",
       "modern": "! Ensure module 'solver_config_mod' is defined in the source code or module file is linked:\nmodule solver_config_mod\n  implicit none\n  ! module variables and interfaces\nend module solver_config_mod"
-    },
-    {
-      "summary": "[GLOBAL] Module 'undefined_mod' used in legacy_patterns.f90 is not defined in any of the analyzed files.",
-      "effort": "moderate",
-      "safety": "review-needed",
-      "priority": 70,
-      "legacy": "use undefined_mod",
-      "modern": "! Ensure module 'undefined_mod' is defined in the source code or module file is linked:\nmodule undefined_mod\n  implicit none\n  ! module variables and interfaces\nend module undefined_mod"
     },
     {
       "summary": "[GLOBAL] Module 'undefined_telemetry_mod' used in enterprise_simulation.f90 is not defined in any of the analyzed files.",
@@ -210,28 +138,12 @@
       "modern": "! Define the missing subroutine or link the object file:\nsubroutine undefined_emergency_shutdown()\n  implicit none\n  ! subroutine implementation\nend subroutine undefined_emergency_shutdown"
     },
     {
-      "summary": "[GLOBAL] Subroutine/function 'undefined_sub' called in legacy_patterns.f90 is not defined in any of the analyzed files.",
-      "effort": "moderate",
-      "safety": "review-needed",
-      "priority": 70,
-      "legacy": "call undefined_sub(...)",
-      "modern": "! Define the missing subroutine or link the object file:\nsubroutine undefined_sub()\n  implicit none\n  ! subroutine implementation\nend subroutine undefined_sub"
-    },
-    {
       "summary": "[enterprise_simulation.f90] Statement function 'scale_val' is an obsolete construct; replace with internal function or expression. (line 38)",
       "effort": "low",
       "safety": "review-needed",
       "priority": 65,
       "legacy": "      scale_val(val, factor) = val * factor + 0.005",
       "modern": "contains\n  pure function scale_val(val, factor) result(res)\n    ! Declare argument types\n    implicit none\n    res =  val * factor + 0.005\n  end function scale_val"
-    },
-    {
-      "summary": "[legacy_patterns.f90] Statement function 'f' is an obsolete construct; replace with internal function or expression. (line 14)",
-      "effort": "low",
-      "safety": "review-needed",
-      "priority": 65,
-      "legacy": "      f(y) = y * y + 1.0",
-      "modern": "contains\n  pure function f(y) result(res)\n    ! Declare argument types\n    implicit none\n    res =  y * y + 1.0\n  end function f"
     },
     {
       "summary": "[enterprise_simulation.f90] Implicit typing is active in program unit '      block data mesh_presets'; add IMPLICIT NONE and declare variables explicitly. (line 154)",
@@ -243,22 +155,6 @@
     },
     {
       "summary": "[enterprise_simulation.f90] Implicit typing is active in program unit '      subroutine solve_mesh_iteration(u, v, work)'; add IMPLICIT NONE and declare variables explicitly. (line 110)",
-      "effort": "moderate",
-      "safety": "safe",
-      "priority": 60,
-      "legacy": "! implicit typing default",
-      "modern": "implicit none\n! Explicitly declare all variables, e.g.:\ninteger :: var_name"
-    },
-    {
-      "summary": "[legacy_patterns.f90] Implicit typing is active in program unit '      subroutine legacy_sub(arr)'; add IMPLICIT NONE and declare variables explicitly. (line 64)",
-      "effort": "moderate",
-      "safety": "safe",
-      "priority": 60,
-      "legacy": "! implicit typing default",
-      "modern": "implicit none\n! Explicitly declare all variables, e.g.:\ninteger :: var_name"
-    },
-    {
-      "summary": "[mismatch_patterns.f90] Implicit typing is active in program unit '      subroutine sub2()'; add IMPLICIT NONE and declare variables explicitly. (line 2)",
       "effort": "moderate",
       "safety": "safe",
       "priority": 60,
@@ -319,46 +215,6 @@
       "safety": "safe",
       "priority": 50,
       "legacy": "        pause \"Mesh exceeds standard simulation size limits. Press Enter.\"",
-      "modern": "! PAUSE is obsolete; replace with print and read statements\nwrite(*,*) \"PAUSE: Press Enter to continue...\"\nread(*,*)"
-    },
-    {
-      "summary": "[legacy_patterns.f90] ASSIGN statement is obsolete; use integer variable assignment. (line 38)",
-      "effort": "low",
-      "safety": "safe",
-      "priority": 50,
-      "legacy": "      assign 200 to mylabel",
-      "modern": "! Replace ASSIGN with standard integer assignment\n! E.g. labelvar = 10"
-    },
-    {
-      "summary": "[legacy_patterns.f90] Assigned GOTO is obsolete; replace with SELECT CASE or IF blocks. (line 39)",
-      "effort": "low",
-      "safety": "safe",
-      "priority": 50,
-      "legacy": "      goto mylabel",
-      "modern": "! Replace assigned GOTO with structured SELECT CASE or IF:\nif (mylabel == 10) then\n  goto 10\nend if"
-    },
-    {
-      "summary": "[legacy_patterns.f90] Hollerith constant '5Hhello' is an obsolete data representation. (line 17)",
-      "effort": "low",
-      "safety": "safe",
-      "priority": 50,
-      "legacy": "5Hhello",
-      "modern": "! Use character literal instead of Hollerith constant\n\"hello\""
-    },
-    {
-      "summary": "[legacy_patterns.f90] Label-terminated DO loop is obsolete; convert to block DO / END DO. (line 45)",
-      "effort": "low",
-      "safety": "safe",
-      "priority": 50,
-      "legacy": "      do 50 idx = 1, 5",
-      "modern": "      do  idx = 1, 5\n  ! loop body\nend do"
-    },
-    {
-      "summary": "[legacy_patterns.f90] PAUSE statement is obsolete; replace with READ statement. (line 42)",
-      "effort": "low",
-      "safety": "safe",
-      "priority": 50,
-      "legacy": "      pause \"paused execution\"",
       "modern": "! PAUSE is obsolete; replace with print and read statements\nwrite(*,*) \"PAUSE: Press Enter to continue...\"\nread(*,*)"
     }
   ]

@@ -10,12 +10,16 @@ DIRECTORY = os.path.join(os.path.dirname(__file__), "web")
 
 class ModernizationAdvisorHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
+        print(f"do_POST called for path: {self.path}")
         if self.path == '/api/analyze':
             content_length = int(self.headers['Content-Length'])
+            print(f"Content-Length: {content_length}")
             post_data = self.rfile.read(content_length)
+            print("Post data read successfully")
             
             try:
                 data = json.loads(post_data.decode('utf-8'))
+                print("JSON parsed successfully")
                 
                 files_to_write = []
                 if "files" in data:
@@ -51,7 +55,9 @@ class ModernizationAdvisorHandler(http.server.SimpleHTTPRequestHandler):
                 input_arg = temp_dir if len(files_to_write) > 1 else os.path.join(temp_dir, files_to_write[0]["filename"])
                 
                 cmd = [advisor_exe, input_arg, "--output", plan_json_path]
+                print(f"Running command: {' '.join(cmd)}")
                 result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+                print(f"Command finished with return code {result.returncode}")
                 
                 response_data = {}
                 if result.returncode == 0 and os.path.exists(plan_json_path):
