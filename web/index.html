@@ -878,27 +878,26 @@
         
         // Parse filename and line number
         // e.g. [legacy_patterns.f90] COMMON blocks... (line 19)
+        // [GLOBAL] findings have no file or line — they span multiple files
         const filePrefixMatch = item.summary.match(/^\[([^\]]+)\]/);
         let targetFile = "input.f90";
         if (filePrefixMatch) {
           targetFile = filePrefixMatch[1];
         }
+        const isGlobal = targetFile === 'GLOBAL';
 
         const lineMatch = item.summary.match(/\(line (\d+)(?:-(\d+))?\)/);
         let startLine = null;
         let endLine = null;
         if (lineMatch) {
           startLine = parseInt(lineMatch[1]);
-          if (lineMatch[2]) {
-            endLine = parseInt(lineMatch[2]);
-          } else {
-            endLine = startLine;
-          }
+          endLine = lineMatch[2] ? parseInt(lineMatch[2]) : startLine;
         }
 
         card.innerHTML = `
           <div class="finding-title">${item.summary}</div>
           <div class="finding-meta">
+            ${isGlobal ? '<span class="badge" style="background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);">CROSS-FILE</span>' : ''}
             <span class="badge badge-priority">Priority: ${item.priority}</span>
             <span class="badge badge-effort ${item.effort}">${item.effort} Effort</span>
             <span class="badge badge-safety ${item.safety}">${item.safety}</span>
@@ -909,28 +908,39 @@
           document.querySelectorAll('.finding-card').forEach(c => c.classList.remove('active'));
           card.classList.add('active');
 
-          // Switch file if needed
-          if (uploadedFiles[targetFile] && fileSelector.value !== targetFile) {
-            fileSelector.value = targetFile;
-            selectAndRenderFile(targetFile);
-          }
-
-          // Highlight Lines
-          document.querySelectorAll('.code-line').forEach(l => l.classList.remove('highlight'));
-          if (startLine) {
-            for (let l = startLine; l <= endLine; l++) {
-              const lineEl = document.getElementById(`line-row-${l}`);
-              if (lineEl) {
-                lineEl.classList.add('highlight');
+          if (isGlobal) {
+            // Cross-file finding: show an informational message in the code viewer
+            codeViewer.innerHTML = `
+              <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:0.75rem;padding:2rem;text-align:center;">
+                <svg style="width:2.5rem;height:2.5rem;color:#fbbf24;opacity:0.8;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>
+                </svg>
+                <div style="font-size:1rem;font-weight:600;color:#fbbf24;">Cross-File Structural Finding</div>
+                <div style="font-size:0.85rem;color:#94a3b8;max-width:500px;line-height:1.7;">
+                  This warning spans <strong style="color:#f1f5f9;">multiple source files</strong> — it cannot be pinned to a single line. 
+                  It was produced by the cross-file validator that checks COMMON block layout consistency and call graph completeness across all analyzed files.
+                  <br><br>
+                  Try <strong style="color:#10b981;">Load Multi-File Mismatch Example</strong> to see a live cross-file COMMON block mismatch.
+                </div>
+              </div>`;
+          } else {
+            // Per-file finding: switch file and highlight line
+            if (uploadedFiles[targetFile] && fileSelector.value !== targetFile) {
+              fileSelector.value = targetFile;
+              selectAndRenderFile(targetFile);
+            }
+            document.querySelectorAll('.code-line').forEach(l => l.classList.remove('highlight'));
+            if (startLine) {
+              for (let l = startLine; l <= endLine; l++) {
+                const lineEl = document.getElementById(`line-row-${l}`);
+                if (lineEl) lineEl.classList.add('highlight');
               }
-            }
-            const scrollTarget = document.getElementById(`line-row-${startLine}`);
-            if (scrollTarget) {
-              scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              const scrollTarget = document.getElementById(`line-row-${startLine}`);
+              if (scrollTarget) scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
           }
 
-          // Refactoring diff
+          // Refactoring diff always shown
           diffGrid.innerHTML = `
             <div class="diff-box diff-legacy">${escapeHtml(item.legacy)}</div>
             <div class="diff-box diff-modern">${escapeHtml(item.modern)}</div>
