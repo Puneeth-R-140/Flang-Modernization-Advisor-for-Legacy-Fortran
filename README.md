@@ -43,9 +43,12 @@ A comprehensive static analysis framework and interactive web dashboard designed
 - `tests/` - Obsolete Fortran code fixtures
   - `legacy_patterns.f90` - Comprehensive obsolete patterns test case
   - `mismatch_patterns.f90` - Mismatched `COMMON` layout test case
+  - `enterprise_simulation.f90` - Enterprise simulation legacy test case
+  - `modernized_simulation.f90` - Modernized variant implementing 4 safe transformations
 - `DESIGN.md` - Technical design choices, preprocessor pipeline, and alternative analyses
 - `IMPLEMENTATION.md` - Lexical preprocessor, parser details, and validation routine implementation
 - `EVALUATION.md` - Performance metrics, baseline accuracy, and test suite evaluation
+- `CASE_STUDY.md` - Case study details applying advisor recommendations to the simulation codebase
 
 ---
 
