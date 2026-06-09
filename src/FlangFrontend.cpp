@@ -9,6 +9,7 @@
 #include "flang/Parser/parsing.h"
 #include "flang/Parser/provenance.h"
 #include "llvm/Support/raw_ostream.h"
+#include "LegacyFortranAdvisor/FlangASTPatternVisitor.h"
 #endif
 
 namespace LegacyFortranAdvisor {
@@ -202,24 +203,22 @@ std::unique_ptr<SourceAnalysis> FlangFrontend::parseFile(const std::string &path
 #ifdef USE_FLANG_PARSER
   std::cerr << "[FlangFrontend] USE_FLANG_PARSER is defined. Attempting to parse: " << path << "\n";
   try {
+    auto holder = std::make_shared<FlangParserHolder>();
     Fortran::parser::Options options;
-    Fortran::parser::AllSources allSources;
-    Fortran::parser::AllCookedSources allCookedSources{allSources};
-    Fortran::parser::Parsing parsing{allCookedSources};
-    
     options.isFixedForm = analysis->fixedFormHint;
     
     std::string absolutePath = std::filesystem::absolute(path).string();
-    const auto *sourceFile = allSources.Open(absolutePath, llvm::errs());
+    const auto *sourceFile = holder->allSources.Open(absolutePath, llvm::errs());
     if (!sourceFile) {
       std::cerr << "[FlangFrontend] Flang parser could not open file: " << absolutePath << "\n";
     }
     if (sourceFile) {
-      parsing.Prescan(absolutePath, options);
-      parsing.Parse(llvm::errs());
-      bool parseSuccess = !parsing.messages().AnyFatalError();
+      holder->parsing.Prescan(absolutePath, options);
+      holder->parsing.Parse(llvm::errs());
+      bool parseSuccess = !holder->parsing.messages().AnyFatalError();
       if (parseSuccess) {
         std::cerr << "[FlangFrontend] Successfully verified syntax using Flang parser.\n";
+        analysis->parsing = holder;
       } else {
         std::cerr << "[FlangFrontend] Flang parser warning: syntax errors detected, falling back to robust preprocessor.\n";
       }

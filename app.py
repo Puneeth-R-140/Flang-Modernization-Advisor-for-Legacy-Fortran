@@ -42,13 +42,17 @@ class ModernizationAdvisorHandler(http.server.SimpleHTTPRequestHandler):
                         f.write(f_info["content"])
                 
                 advisor_exe = os.path.join(os.path.dirname(__file__), "build", "Debug", "flang-modernization-advisor.exe")
-                # Fallback to Release path or standard Linux binary if debug exe doesn't exist
+                # Fallback chain: Windows Debug -> Windows Release -> WSL build -> plain Linux build
                 if not os.path.exists(advisor_exe):
                     advisor_exe_release = os.path.join(os.path.dirname(__file__), "build", "Release", "flang-modernization-advisor.exe")
                     if os.path.exists(advisor_exe_release):
                         advisor_exe = advisor_exe_release
                     else:
-                        advisor_exe = os.path.join(os.path.dirname(__file__), "build", "flang-modernization-advisor")
+                        advisor_exe_wsl = os.path.join(os.path.dirname(__file__), "build_wsl", "flang-modernization-advisor")
+                        if os.path.exists(advisor_exe_wsl):
+                            advisor_exe = advisor_exe_wsl
+                        else:
+                            advisor_exe = os.path.join(os.path.dirname(__file__), "build", "flang-modernization-advisor")
                 
                 plan_json_path = os.path.join(temp_dir, "plan.json")
                 

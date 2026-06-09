@@ -1,4 +1,7 @@
 #include "LegacyFortranAdvisor/PatternDetector.h"
+#ifdef USE_FLANG_PARSER
+#include "LegacyFortranAdvisor/FlangASTPatternVisitor.h"
+#endif
 #include <algorithm>
 #include <cctype>
 #include <iostream>
@@ -385,6 +388,15 @@ std::string makeModernDoLoop(const std::string &rawContent) {
 } // namespace
 
 std::vector<PatternFinding> PatternDetector::detectPatterns(const SourceAnalysis &analysis) {
+#ifdef USE_FLANG_PARSER
+  if (analysis.parsing) {
+    auto holder = std::static_pointer_cast<FlangParserHolder>(analysis.parsing);
+    if (holder->parsing.parseTree()) {
+      FlangASTPatternVisitor visitor(holder->parsing.allCooked());
+      return visitor.analyze(*holder->parsing.parseTree());
+    }
+  }
+#endif
   std::vector<PatternFinding> findings;
 
   const std::regex arithmeticIfPattern(R"(^if\(.+\)\d+,\d+,\d+$)");

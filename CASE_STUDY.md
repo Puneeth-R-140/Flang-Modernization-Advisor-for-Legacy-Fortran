@@ -15,11 +15,13 @@ We apply the advisor to `tests/enterprise_simulation.f90`, which simulates a mul
 
 ## 2. Advisor Analysis & Modernization Plan
 
-Executing the advisor over the legacy code generates a plan containing **21 distinct warnings** for the file:
+Executing the advisor over the legacy code generates a plan containing **27 distinct findings** for the file (WSL build with AST visitor enabled):
 ```text
-[FlangFrontend] Parsed 163 line(s), extracted 86 normalized statement(s) from tests/enterprise_simulation.f90
-[PatternDetector] Detected 21 pattern finding(s)
-[ImpactAnalyzer] Computing impact for 21 finding(s)
+[FlangFrontend] USE_FLANG_PARSER is defined. Attempting to parse: tests/enterprise_simulation.f90
+[FlangASTPatternVisitor] Visiting parse tree...
+[FlangASTPatternVisitor] Detected 13 pattern finding(s) from AST nodes
+[PatternDetector] Detected 14 additional finding(s) from text-based pass
+[ImpactAnalyzer] Computing impact for 27 finding(s)
 ```
 
 The advisor ranks findings by priority, effort, and safety. Based on the advisor's plan, we identify safe, lower-risk transformations to execute first.
@@ -102,14 +104,15 @@ wsl ./run.sh tests/modernized_simulation.f90
 Console Output (WSL):
 ```text
 [FlangFrontend] USE_FLANG_PARSER is defined. Attempting to parse: /mnt/e/Flang Advisor for legacy Fortan/tests/modernized_simulation.f90
-[FlangFrontend] Flang parser warning: syntax errors detected, falling back to robust preprocessor.
-[FlangFrontend] Parsed 163 line(s), extracted 86 normalized statement(s) from tests/modernized_simulation.f90
-[PatternDetector] Detected 14 pattern finding(s)
+[FlangASTPatternVisitor] Visiting parse tree...
+[FlangASTPatternVisitor] Detected 6 pattern finding(s) from AST nodes
+[PatternDetector] Detected 14 additional finding(s) from text-based pass
+[ImpactAnalyzer] Computing impact for 20 finding(s)
 ```
 
 ### Warning Count Reduction
-- **Original (`tests/enterprise_simulation.f90`)**: **21** findings.
-- **Modernized (`tests/modernized_simulation.f90`)**: **14** findings.
+- **Original (`tests/enterprise_simulation.f90`)**: **27** findings (WSL with AST visitor).
+- **Modernized (`tests/modernized_simulation.f90`)**: **20** findings.
 - **Result**: Successfully resolved **7 legacy warnings** with 100% precision.
 
 The modernized codebase compiles cleanly under modern compilers, and the safe transformations did not alter the solver's computational results, validating the advisor's risk assessments and recommendations.

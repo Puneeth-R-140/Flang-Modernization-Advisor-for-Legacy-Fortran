@@ -3,7 +3,10 @@
 A comprehensive static analysis framework and interactive web dashboard designed to detect obsolete Fortran constructs, validate cross-file structural layouts (like `COMMON` blocks), verify subroutine/module call graphs, and generate prioritized modernization refactoring plans.
 
 ## Features
-- **Comprehensive Pattern Detection**: Scans and identifies 13 distinct legacy Fortran anti-patterns:
+- **Dual-Path Detection Engine**: Detects 13 distinct legacy Fortran anti-patterns through two complementary detection strategies:
+  - **AST Visitor Layer** (`FlangASTPatternVisitor`): Traverses Flang parse-tree nodes directly via `Fortran::parser::Walk`, used in WSL/Linux builds where LLVM Flang libraries are available (`-DUSE_FLANG_PARSER`).
+  - **Text Preprocessor Layer** (`PatternDetector`): Normalized statement-level matching that runs as a fallback on Windows and as a supplemental pass on all platforms.
+- **Patterns Detected** (all 13):
   - Arithmetic IF
   - Computed GOTO
   - EQUIVALENCE statements
@@ -17,7 +20,7 @@ A comprehensive static analysis framework and interactive web dashboard designed
   - PAUSE statements
   - Label-terminated DO loops
 - **Cross-File Layout Verification**: Validates type, sizing, and alignment uniformity of shared `COMMON` blocks across multiple translation units, flagging structural mismatches.
-- **Dependency & Call Graph Validation**: Analyzes module imports (`use`) and external subroutine calls (`call`) across files to flag undefined resources (skipping standard intrinsics like `cpu_time`).
+- **Dependency and Call Graph Validation**: Analyzes module imports (`use`) and external subroutine calls (`call`) across files to flag undefined resources (skipping standard intrinsics like `cpu_time`).
 - **Interactive Web Interface**: A glassmorphic web dashboard that supports:
   - Drag-and-drop uploads of multiple Fortran source files or directories.
   - Live syntax-highlighted code viewer.
@@ -27,17 +30,19 @@ A comprehensive static analysis framework and interactive web dashboard designed
 ---
 
 ## Project Structure
-- `build.sh` - Automated Release build compiler script
-- `run.sh` - Executable wrapper script to run the compiler tool
+- `build.sh` - Automated Release build script (auto-detects WSL/Linux vs. Windows)
+- `run.sh` - Executable wrapper script to run the compiled analyzer
 - `CMakeLists.txt` - CMake build configuration
 - `app.py` - Python HTTP server serving the Web API and static frontend
 - `src/` - Core static analysis C++ engine
   - `main.cpp` - Entrypoint scanner, directory crawler, and cross-file validator
-  - `FlangFrontend.cpp` - Preprocessor normalizer (handles spacing, comments, continuation lines)
-  - `PatternDetector.cpp` - Parser/detector rules for all obsolete constructs
-  - `ImpactAnalyzer.cpp` - Semantic impact, modern equivalency, and risk parser
+  - `FlangFrontend.cpp` - Preprocessor normalizer and Flang compiler parser driver
+  - `PatternDetector.cpp` - Text-based detector rules for all obsolete constructs (fallback)
+  - `FlangASTPatternVisitor.cpp` - AST parse-tree visitor using `Fortran::parser::Walk` (WSL/Linux, `USE_FLANG_PARSER`)
+  - `ImpactAnalyzer.cpp` - Semantic impact, modern equivalency, and risk classifier
   - `Prioritization.cpp` - Multi-criteria scoring engine
-- `include/LegacyFortranAdvisor/` - C++ Header files defining API data structures
+- `include/LegacyFortranAdvisor/` - C++ header files defining API data structures
+  - `FlangASTPatternVisitor.h` - Visitor class interface
 - `web/` - Web dashboard assets
   - `index.html` - Premium glassmorphic interactive frontend UI
 - `tests/` - Obsolete Fortran code fixtures
@@ -45,10 +50,10 @@ A comprehensive static analysis framework and interactive web dashboard designed
   - `mismatch_patterns.f90` - Mismatched `COMMON` layout test case
   - `enterprise_simulation.f90` - Enterprise simulation legacy test case
   - `modernized_simulation.f90` - Modernized variant implementing 4 safe transformations
-- `DESIGN.md` - Technical design choices, preprocessor pipeline, and alternative analyses
-- `IMPLEMENTATION.md` - Lexical preprocessor, parser details, and validation routine implementation
+- `DESIGN.md` - Technical design choices, dual-path architecture, and alternative analyses
+- `IMPLEMENTATION.md` - Lexical preprocessor, AST visitor, and validation routine implementation
 - `EVALUATION.md` - Performance metrics, baseline accuracy, and test suite evaluation
-- `CASE_STUDY.md` - Case study details applying advisor recommendations to the simulation codebase
+- `CASE_STUDY.md` - Case study applying advisor recommendations to the simulation codebase
 
 ---
 
@@ -66,23 +71,36 @@ A comprehensive static analysis framework and interactive web dashboard designed
 
 ### Build
 To compile the C++ analyzer in `Release` configuration, execute the build script:
-```bash
-./build.sh
-```
-This automatically detects your environment:
-- **On WSL / Linux**: Compiles into `build_wsl/flang-modernization-advisor` with the native Flang compiler parser target (`-DUSE_FLANG_PARSER`).
-- **On Windows**: Compiles into `build/Release/flang-modernization-advisor.exe` using standard lexical analysis rules.
+
+- **On Windows Native Terminal (PowerShell/CMD)**:
+  ```powershell
+  ./build.sh
+  ```
+  Compiles into `build/Release/flang-modernization-advisor.exe` using standard lexical analysis rules (text-based detector only).
+
+- **From Windows Host Terminal using WSL**:
+  ```powershell
+  wsl ./build.sh
+  ```
+
+- **On Linux / Inside WSL Terminal**:
+  ```bash
+  ./build.sh
+  ```
+  Automatically detects LLVM/Flang libraries and compiles into `build_wsl/flang-modernization-advisor` with `-DUSE_FLANG_PARSER` enabled, activating the native AST parse-tree visitor layer.
 
 ### Run (CLI)
 You can analyze a single file or an entire directory of Fortran source files using the `run.sh` script:
+
 - **From Windows Host Terminal (PowerShell/CMD)**:
-  ```bash
+  ```powershell
   # Run the native Windows binary
   ./run.sh tests/
 
   # Or run the WSL binary from the Windows host
   wsl ./run.sh tests/
   ```
+
 - **From Linux / Inside WSL Terminal**:
   ```bash
   # Run the compiled Linux binary directly
@@ -94,10 +112,12 @@ You can analyze a single file or an entire directory of Fortran source files usi
 
 ### Run (Web Dashboard)
 To launch the interactive dashboard, run the local Python server:
+
 - **From Windows Host Terminal**:
-  ```bash
+  ```powershell
   python app.py
   ```
+
 - **From Linux / Inside WSL Terminal**:
   ```bash
   python3 app.py

@@ -1,10 +1,10 @@
-# IMPLEMENTATION: Parser, Lexer & Validator Details
+# IMPLEMENTATION: Parser, Lexer, AST Visitor and Validator Details
 
-This document explains the internal implementation details of the Flang Modernization Advisor, including lexical normalization, pattern matching algorithms, cross-file structural validation, and prioritization scoring.
+This document explains the internal implementation details of the Flang Modernization Advisor, including lexical normalization, the Flang AST parse-tree visitor, pattern matching algorithms, cross-file structural validation, and prioritization scoring.
 
 ---
 
-## 1. Lexical Preprocessor & Statement Normalization
+## 1. Lexical Preprocessor and Statement Normalization
 
 The preprocessing stage in `FlangFrontend.cpp` handles the syntactical normalization of fixed-form and free-form Fortran source styles into logical statements.
 
@@ -26,17 +26,58 @@ For files identified as free-form (e.g., `.f90` extension):
 
 ---
 
-## 2. Pattern Matching Strategies
+## 2. LLVM Flang AST Parse-Tree Visitor
+
+When `-DUSE_FLANG_PARSER` is defined (WSL/Linux with LLVM Flang 22 dev packages), `FlangFrontend.cpp` invokes `Fortran::parser::Parsing` to execute the compiler's native `Prescan` and `Parse` stages. The resulting `Fortran::parser::Program` parse tree and its `AllCookedSources` provenance map are stored in `SourceAnalysis::parsing` as a `FlangParserHolder`.
+
+### FlangASTPatternVisitor (`src/FlangASTPatternVisitor.cpp`)
+
+`PatternDetector::detectPatterns` retrieves the stored `FlangParserHolder` and instantiates `FlangASTPatternVisitor`. The visitor implements an `ASTVisitor` struct whose `Pre`/`Post` method overloads are dispatched by `Fortran::parser::Walk(program, visitor)`:
+
+```
+Fortran::parser::Walk(program, visitor)
+    |
+    +-- Pre(Statement<T>)       -- captures currentStmtSource CharBlock for every statement
+    +-- Pre(ArithmeticIfStmt)   -- Arithmetic IF
+    +-- Pre(ComputedGotoStmt)   -- Computed GOTO
+    +-- Pre(CommonStmt)         -- COMMON block (extracts variable names from AST)
+    +-- Pre(EquivalenceStmt)    -- EQUIVALENCE (extracts names via NameCollector walk)
+    +-- Pre(EntryStmt)          -- ENTRY statement
+    +-- Pre(StmtFunctionStmt)   -- Statement function (extracts name and argument list)
+    +-- Pre(LabelDoStmt)        -- Label-terminated DO loop
+    +-- Pre(AssignStmt)         -- ASSIGN statement
+    +-- Pre(AssignedGotoStmt)   -- Assigned GOTO
+    +-- Pre(PauseStmt)          -- PAUSE statement
+    +-- Pre(ImplicitStmt)       -- tracks implicit none per program unit scope
+    +-- Pre(MainProgram)        -- pushes scope onto unit stack
+    +-- Pre(SubroutineSubprogram) -- pushes scope
+    +-- Pre(FunctionSubprogram)   -- pushes scope
+    +-- Pre(BlockData)            -- pushes scope
+    +-- Post(MainProgram etc.)    -- pops scope, emits implicit typing warning if needed
+```
+
+### Source Location Resolution
+Each `Statement<T>` node carries a `CharBlock source` field. When `Pre(Statement<T>)` fires, the visitor stores this as `currentStmtSource`. Pattern handlers call `cooked.GetSourcePositionRange(currentStmtSource)` to resolve exact line numbers from provenance, which are embedded into `Finding::summary` as `(line N)`.
+
+### Hollerith Detection at Statement Level
+Hollerith constants are resolved at the Flang scanner stage (before the parse tree is built), so they do not appear as typed AST nodes. The visitor detects them by scanning the raw `Statement<T>::source.ToString()` text in the generic `Pre(Statement<T>)` overload using a digit-then-H pattern matcher.
+
+### Fallback Behavior
+If `Prescan` or `Parse` reports errors (typical for legacy snippets with missing modules), `FlangFrontend` catches the failure and falls back gracefully to the custom lexical preprocessor, ensuring pattern scanning is never interrupted.
+
+---
+
+## 3. Text-Based Pattern Matching (Fallback and Windows)
 
 Obsolete constructs are detected using specialized parser rules in `PatternDetector.cpp`:
 
-### Obsolete Control Flow & Formatting
+### Obsolete Control Flow and Formatting
 - **Arithmetic IF**: Matches standard pattern shape `if(<expr>)label1,label2,label3` using regular expressions. The values are extracted, and a structured `if ... then / else if / else` replacement is templated.
 - **Computed GOTO**: Matches `goto(lbl1,lbl2...),expr` using `std::regex`. The labels are parsed into a vector and mapped to cases in a modern `select case` structure.
-- **ASSIGN & Assigned GOTO**: Detects the assignment of code labels to integer variables (e.g. `assign 10 to labelvar`) and indirect jumps (e.g. `goto labelvar`).
+- **ASSIGN and Assigned GOTO**: Detects the assignment of code labels to integer variables (e.g. `assign 10 to labelvar`) and indirect jumps (e.g. `goto labelvar`).
 - **Label DO Loops**: Detects DO loops utilizing statement termination labels (e.g. `do 50 i = 1, 10`).
 
-### Obsolete Storage & Declarations
+### Obsolete Storage and Declarations
 - **EQUIVALENCE**: Detects memory aliasing constructs `equivalence(var1, var2)`. Refactoring suggestions propose replacing the construct with standard `pointer` targets or overlay structures.
 - **Statement Functions**: Detects non-executable inline definitions occurring in declaration blocks (e.g. `f(x) = x * 2.0`). Checks against active array names to prevent false-positives.
 - **Assumed-Size Arrays**: Identifies array parameters declared with a trailing asterisk bounds (`*`), proposing conversion to modern assumed-shape arrays (`arr(:)`).
@@ -44,12 +85,12 @@ Obsolete constructs are detected using specialized parser rules in `PatternDetec
 
 ---
 
-## 3. Cross-File Validation Routines
+## 4. Cross-File Validation Routines
 
 To evaluate code structure beyond single files, `main.cpp` aggregates metadata from all analyzed sources.
 
 ### COMMON Block Alignment Validation
-1. **Variable Sizing & Resolution**: Each identifier in a `COMMON` block is parsed. The code scans the declaration history in the parent file to resolve its type and array size.
+1. **Variable Sizing and Resolution**: Each identifier in a `COMMON` block is parsed. The code scans the declaration history in the parent file to resolve its type and array size.
 2. **Layout Compilation**: The compiler builds a `CommonBlockLayout` containing the sequence of variables, their type names, and total sizes.
 3. **Equivalence Comparison**: When the same `COMMON` block name is declared across multiple files, the engine performs a structural pairwise match:
    - Verifies variable count.
@@ -57,15 +98,6 @@ To evaluate code structure beyond single files, `main.cpp` aggregates metadata f
    - Matches array dimensions.
 4. **Output Generation**: Mismatches trigger a high-priority `GLOBAL` warning showing exact file line references and generating a synchronized template `MODULE` to declare variables cleanly.
 
-### Module & Call Graph Verification
+### Module and Call Graph Verification
 - **Module Declarations**: Collects all module names defined in the parsed codebase. If a file specifies `use <mod_name>` and it cannot be found, a warning is generated.
 - **Subroutine Call Graph**: Maps declared subroutines and functions. Scans all `call <sub_name>` statements. If a call is made to an undefined subroutine (which is not in the list of standard compiler intrinsics like `cpu_time`), it is flagged.
-
----
-
-## 4. LLVM Integration Pathway
-
-We have successfully implemented the LLVM integration pathway in our WSL build environment:
-- **Parse-Tree Validation**: In `src/FlangFrontend.cpp`, if `-DUSE_FLANG_PARSER` is defined, the system invokes the official `Fortran::parser::Parsing` driver library. This executes the compiler's native `Prescan` and `Parse` stages, validating the formal syntax of the target file using actual compiler components.
-- **Robust Fallback**: If the strict compiler parser discovers syntax or semantic resolution failures (e.g., missing modules or reference scopes typical in legacy snippets), it falls back gracefully to our custom lexical preprocessor and statement normalizer to ensure pattern scanning is never interrupted.
-- **Symbol Table Ready**: The `resolveVariable` table lookups are structured to eventually integrate with Flang's semantic scope mapping (`Fortran::semantics::Scope`), translating type information directly from compiler-generated AST symbols.

@@ -24,6 +24,7 @@ set(SRC_FILES
   src/PatternDetector.cpp
   src/ImpactAnalyzer.cpp
   src/Prioritization.cpp
+  src/FlangASTPatternVisitor.cpp
 )
 
 add_executable(flang-modernization-advisor ${SRC_FILES})

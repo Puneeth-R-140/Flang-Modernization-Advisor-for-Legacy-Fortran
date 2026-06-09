@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace LegacyFortranAdvisor {
 
@@ -26,6 +27,7 @@ struct SourceAnalysis {
   std::vector<std::string> lines;
   std::vector<NormalizedStatement> statements;
   bool fixedFormHint = false;
+  std::shared_ptr<void> parsing; // Holds shared_ptr<Fortran::parser::Parsing> on WSL
 };
 
 struct ImpactSummary {
